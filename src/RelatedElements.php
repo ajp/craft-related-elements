@@ -98,12 +98,15 @@ class RelatedElements extends Plugin
                                 ->all();
 
                             if (!empty($newElements)) {
-                                $nestedRelatedElements[$field->name][$type] =
-                                    array_merge(
-                                        $nestedRelatedElements[$field->name][$type] ?? [],
-                                        $newElements
-                                    );
-                                $hasResults = true;
+                                foreach ($newElements as $newElement) {
+                                    $existingElements = $nestedRelatedElements[$field->name][$type] ?? [];
+                                    $existingElementIds = array_map(fn($e) => $e->id, $existingElements);
+
+                                    if (!in_array($newElement->id, $existingElementIds)) {
+                                        $nestedRelatedElements[$field->name][$type][] = $newElement;
+                                        $hasResults = true;
+                                    }
+                                }
                             }
                         }
                     }
