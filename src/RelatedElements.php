@@ -72,7 +72,13 @@ class RelatedElements extends Plugin
         $enableNestedElements = self::$settings->enableNestedElements;
 
         foreach ($relatedTypes as $type => $class) {
-            $relatedElements[$type] = $class::find()->relatedTo($entry)->status(null)->orderBy('title')->all();
+            $relatedElements[$type] = $class::find()
+                ->relatedTo($entry)
+                ->status(null)
+                ->orderBy('title')
+                ->siteId('*')
+                ->unique()
+                ->all();
 
             if (!empty($relatedElements[$type])) {
                 $hasResults = true;
@@ -108,12 +114,13 @@ class RelatedElements extends Plugin
                 }
 
                 foreach ($blocks->all() as $block) {
-                    // Find direct relations in this block
                     foreach ($relatedTypes as $type => $class) {
                         $newElements = $class::find()
                             ->relatedTo($block)
                             ->status(null)
                             ->orderBy('title')
+                            ->siteId('*')
+                            ->unique()
                             ->all();
 
                         if (!empty($newElements)) {
