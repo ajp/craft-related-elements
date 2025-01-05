@@ -80,38 +80,7 @@ class RelatedElements extends Plugin
         }
 
         if ($enableNestedElements) {
-            $customFields = $entry->getFieldLayout()->getCustomFields();
-
-            foreach ($customFields as $field) {
-                $isMatrixField = $field instanceof Matrix;
-                $isNeoField = class_exists('\benf\neo\Field') && get_class($field) === \benf\neo\Field::class;
-
-                if ($isMatrixField || $isNeoField) {
-                    $blocks = $entry->getFieldValue($field->handle);
-
-                    foreach ($blocks->all() as $block) {
-                        foreach ($relatedTypes as $type => $class) {
-                            $newElements = $class::find()
-                                ->relatedTo($block)
-                                ->status(null)
-                                ->orderBy('title')
-                                ->all();
-
-                            if (!empty($newElements)) {
-                                foreach ($newElements as $newElement) {
-                                    $existingElements = $nestedRelatedElements[$field->name][$type] ?? [];
-                                    $existingElementIds = array_map(fn($e) => $e->id, $existingElements);
-
-                                    if (!in_array($newElement->id, $existingElementIds)) {
-                                        $nestedRelatedElements[$field->name][$type][] = $newElement;
-                                        $hasResults = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            $this->findNestedElements($entry->getFieldLayout()->getCustomFields(), $entry, $nestedRelatedElements, $hasResults, $relatedTypes);
         }
 
         return Craft::$app->getView()->renderTemplate(
@@ -122,6 +91,68 @@ class RelatedElements extends Plugin
                 'nestedRelatedElements' => $nestedRelatedElements,
             ]
         );
+    }
+
+    private function findNestedElements(array $fields, Element $element, array &$nestedRelatedElements, bool &$hasResults, array $relatedTypes, string $fieldPath = ''): void
+    {
+        foreach ($fields as $field) {
+            $isMatrixField = $field instanceof Matrix;
+            $isNeoField = class_exists('\benf\neo\Field') && get_class($field) === \benf\neo\Field::class;
+
+            if ($isMatrixField || $isNeoField) {
+                $blocks = $element->getFieldValue($field->handle);
+                $fieldName = $fieldPath ? $fieldPath . ' → ' . $field->name : $field->name;
+
+                if (!isset($nestedRelatedElements[$fieldName])) {
+                    $nestedRelatedElements[$fieldName] = [];
+                }
+
+                foreach ($blocks->all() as $block) {
+                    // Find direct relations in this block
+                    foreach ($relatedTypes as $type => $class) {
+                        $newElements = $class::find()
+                            ->relatedTo($block)
+                            ->status(null)
+                            ->orderBy('title')
+                            ->all();
+
+                        if (!empty($newElements)) {
+                            if (!isset($nestedRelatedElements[$fieldName][$type])) {
+                                $nestedRelatedElements[$fieldName][$type] = [];
+                            }
+
+                            foreach ($newElements as $newElement) {
+                                $exists = false;
+                                foreach ($nestedRelatedElements[$fieldName][$type] as $existingElement) {
+                                    if ($existingElement->id === $newElement->id) {
+                                        $exists = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!$exists) {
+                                    $nestedRelatedElements[$fieldName][$type][] = $newElement;
+                                    $hasResults = true;
+                                }
+                            }
+                        }
+                    }
+
+                    // Recursively check for nested Matrix/Neo fields within this block
+                    $blockFields = $block->getFieldLayout()->getCustomFields();
+                    if (!empty($blockFields)) {
+                        $this->findNestedElements(
+                            $blockFields,
+                            $block,
+                            $nestedRelatedElements,
+                            $hasResults,
+                            $relatedTypes,
+                            $fieldName
+                        );
+                    }
+                }
+            }
+        }
     }
 
     protected function createSettingsModel(): ?Model
