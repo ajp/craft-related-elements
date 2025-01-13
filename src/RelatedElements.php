@@ -58,7 +58,7 @@ class RelatedElements extends Plugin
         );
     }
 
-    private function renderTemplate(Entry|Category|Asset $entry): string
+    private function renderTemplate(Element $element): string
     {
         $relatedTypes = [
             'Entry' => Entry::class,
@@ -70,14 +70,17 @@ class RelatedElements extends Plugin
         $nestedRelatedElements = [];
         $hasResults = false;
         $enableNestedElements = self::$settings->enableNestedElements;
+        $currentSiteId = $element->siteId;
+        $currentSiteHandle = Craft::$app->getSites()->getSiteById($currentSiteId)->handle;
 
         foreach ($relatedTypes as $type => $class) {
             $relatedElements[$type] = $class::find()
-                ->relatedTo($entry)
+                ->relatedTo($element)
                 ->status(null)
-                ->orderBy('title')
-                ->siteId('*')
+                ->site('*')
                 ->unique()
+                ->preferSites([$currentSiteHandle])
+                ->orderBy('title')
                 ->all();
 
             if (!empty($relatedElements[$type])) {
@@ -86,7 +89,7 @@ class RelatedElements extends Plugin
         }
 
         if ($enableNestedElements) {
-            $this->findNestedElements($entry->getFieldLayout()->getCustomFields(), $entry, $nestedRelatedElements, $hasResults, $relatedTypes);
+            $this->findNestedElements($element->getFieldLayout()->getCustomFields(), $element, $nestedRelatedElements, $hasResults, $relatedTypes);
         }
 
         return Craft::$app->getView()->renderTemplate(
@@ -101,6 +104,9 @@ class RelatedElements extends Plugin
 
     private function findNestedElements(array $fields, Element $element, array &$nestedRelatedElements, bool &$hasResults, array $relatedTypes, string $fieldPath = ''): void
     {
+        $currentSiteId = $element->siteId;
+        $currentSiteHandle = Craft::$app->getSites()->getSiteById($currentSiteId)->handle;
+
         foreach ($fields as $field) {
             $isMatrixField = $field instanceof Matrix;
             $isNeoField = class_exists('\benf\neo\Field') && get_class($field) === \benf\neo\Field::class;
@@ -118,9 +124,10 @@ class RelatedElements extends Plugin
                         $newElements = $class::find()
                             ->relatedTo($block)
                             ->status(null)
-                            ->orderBy('title')
-                            ->siteId('*')
+                            ->site('*')
                             ->unique()
+                            ->preferSites([$currentSiteHandle])
+                            ->orderBy('title')
                             ->all();
 
                         if (!empty($newElements)) {
