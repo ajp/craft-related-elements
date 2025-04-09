@@ -1,12 +1,27 @@
 # Release Notes for Related Elements
 
+## 1.1.3 - 2025-04-09
+### Added
+- Improve error handling.
+
+### Fixed
+- Adjust element sidebar padding.
+- Typo in settings instructions.
+
+## 1.1.2 - 2025-01-13
+### Fixed
+- Prefer related elements from the current site.
+
 ## 1.1.1 - 2025-01-05
-- Fixed: Merge nested Neo & Matrix elements if multiple blocks are present.
-- Fixed: Recursively relate nested fields.
-- Fixed: Show related entries that don't exist in the primary site.
+### Fixed
+- Merge nested Neo & Matrix elements if multiple blocks are present.
+- Recursively relate nested fields.
+- Show related entries that don't exist in the primary site.
 
 ## 1.1.0 - 2024-10-06
-- Added: Support for nested elements in Matrix and Neo fields.
+### Added
+- Support for nested elements in Matrix and Neo fields.
 
 ## 1.0.0 - 2024-09-17
-- Initial release
+### Added
+- Initial release.
