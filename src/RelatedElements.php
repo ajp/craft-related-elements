@@ -104,68 +104,120 @@ class RelatedElements extends Plugin
 
     private function findNestedElements(array $fields, Element $element, array &$nestedRelatedElements, bool &$hasResults, array $relatedTypes, string $fieldPath = ''): void
     {
-        $currentSiteId = $element->siteId;
-        $currentSiteHandle = Craft::$app->getSites()->getSiteById($currentSiteId)->handle;
+        if (!$element || !$element->siteId) {
+            return;
+        }
 
-        foreach ($fields as $field) {
-            $isMatrixField = $field instanceof Matrix;
-            $isNeoField = class_exists('\benf\neo\Field') && get_class($field) === \benf\neo\Field::class;
+        try {
+            $currentSiteId = $element->siteId;
+            $currentSite = Craft::$app->getSites()->getSiteById($currentSiteId);
 
-            if ($isMatrixField || $isNeoField) {
-                $blocks = $element->getFieldValue($field->handle);
-                $fieldName = $fieldPath ? $fieldPath . ' → ' . $field->name : $field->name;
+            if (!$currentSite) {
+                return;
+            }
 
-                if (!isset($nestedRelatedElements[$fieldName])) {
-                    $nestedRelatedElements[$fieldName] = [];
+            $currentSiteHandle = $currentSite->handle;
+
+            foreach ($fields as $field) {
+                if (!$field || !$field->handle) {
+                    continue;
                 }
 
-                foreach ($blocks->all() as $block) {
-                    foreach ($relatedTypes as $type => $class) {
-                        $newElements = $class::find()
-                            ->relatedTo($block)
-                            ->status(null)
-                            ->site('*')
-                            ->unique()
-                            ->preferSites([$currentSiteHandle])
-                            ->orderBy('title')
-                            ->all();
+                $isMatrixField = $field instanceof Matrix;
+                $isNeoField = class_exists('\benf\neo\Field') && get_class($field) === \benf\neo\Field::class;
 
-                        if (!empty($newElements)) {
-                            if (!isset($nestedRelatedElements[$fieldName][$type])) {
-                                $nestedRelatedElements[$fieldName][$type] = [];
+                if ($isMatrixField || $isNeoField) {
+                    try {
+                        $blocks = $element->getFieldValue($field->handle);
+
+                        if (!$blocks) {
+                            continue;
+                        }
+
+                        $fieldName = $fieldPath ? $fieldPath . ' → ' . $field->name : $field->name;
+
+                        if (!isset($nestedRelatedElements[$fieldName])) {
+                            $nestedRelatedElements[$fieldName] = [];
+                        }
+
+                        foreach ($blocks->all() as $block) {
+                            if (!$block) {
+                                continue;
                             }
 
-                            foreach ($newElements as $newElement) {
-                                $exists = false;
-                                foreach ($nestedRelatedElements[$fieldName][$type] as $existingElement) {
-                                    if ($existingElement->id === $newElement->id) {
-                                        $exists = true;
-                                        break;
+                            try {
+                                $fieldLayout = $block->getFieldLayout();
+                                if (!$fieldLayout) {
+                                    continue;
+                                }
+
+                                // For Neo blocks, ensure they have a valid type
+                                if ($isNeoField && $block instanceof \benf\neo\elements\Block) {
+                                    if (!$block->getType()) {
+                                        continue;
                                     }
                                 }
 
-                                if (!$exists) {
-                                    $nestedRelatedElements[$fieldName][$type][] = $newElement;
-                                    $hasResults = true;
+                                foreach ($relatedTypes as $type => $class) {
+                                    $newElements = $class::find()
+                                        ->relatedTo($block)
+                                        ->status(null)
+                                        ->site('*')
+                                        ->unique()
+                                        ->preferSites([$currentSiteHandle])
+                                        ->orderBy('title')
+                                        ->all();
+
+                                    if (!empty($newElements)) {
+                                        if (!isset($nestedRelatedElements[$fieldName][$type])) {
+                                            $nestedRelatedElements[$fieldName][$type] = [];
+                                        }
+
+                                        foreach ($newElements as $newElement) {
+                                            $exists = false;
+                                            foreach ($nestedRelatedElements[$fieldName][$type] as $existingElement) {
+                                                if ($existingElement->id === $newElement->id) {
+                                                    $exists = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (!$exists) {
+                                                $nestedRelatedElements[$fieldName][$type][] = $newElement;
+                                                $hasResults = true;
+                                            }
+                                        }
+                                    }
                                 }
+
+                                // Recursively check for nested Matrix/Neo fields within this block
+                                $blockFields = $fieldLayout->getCustomFields();
+                                if (!empty($blockFields)) {
+                                    $this->findNestedElements(
+                                        $blockFields,
+                                        $block,
+                                        $nestedRelatedElements,
+                                        $hasResults,
+                                        $relatedTypes,
+                                        $fieldName
+                                    );
+                                }
+                            } catch (\Throwable $e) {
+                                // Log the error but continue processing other blocks
+                                Craft::warning('Error processing block in Related Elements plugin: ' . $e->getMessage(), __METHOD__);
+                                continue;
                             }
                         }
-                    }
-
-                    // Recursively check for nested Matrix/Neo fields within this block
-                    $blockFields = $block->getFieldLayout()->getCustomFields();
-                    if (!empty($blockFields)) {
-                        $this->findNestedElements(
-                            $blockFields,
-                            $block,
-                            $nestedRelatedElements,
-                            $hasResults,
-                            $relatedTypes,
-                            $fieldName
-                        );
+                    } catch (\Throwable $e) {
+                        // Log the error but continue processing other fields
+                        Craft::warning('Error processing field in Related Elements plugin: ' . $e->getMessage(), __METHOD__);
+                        continue;
                     }
                 }
             }
+        } catch (\Throwable $e) {
+            // Log the error but don't throw it
+            Craft::error('Error in Related Elements plugin: ' . $e->getMessage(), __METHOD__);
         }
     }
 
