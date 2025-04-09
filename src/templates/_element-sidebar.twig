@@ -5,7 +5,7 @@
       {% for key, section in relatedElements %}
         {% if section|length %}
           {% for element in section %}
-            <div class="field" style="padding-block: 10px;">
+            <div class="field" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
               <a href="{{ element.cpEditUrl }}" class="flex flex-nowrap gap-s">
                 <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
                 <span class="cp-icon small">
@@ -35,7 +35,7 @@
         {% endfor %}
 
         {% if hasFieldElements %}
-          <div class="field" style="padding-block: 10px;">
+          <div class="field" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
             <em>
               {{ fieldKey }}
             </em>
@@ -70,8 +70,10 @@
         {% endif %}
       {% endfor %}
     {% else %}
-      <div class="field" style="padding-block: 10px;">
-        <p>No related elements found.</p>
+      <div class="field flex-1">
+        <div style="padding-block: 12px; padding-inline: var(--m) var(--s);">
+          <p>No related elements found.</p>
+        </div>
       </div>
     {% endif %}
   </div>
