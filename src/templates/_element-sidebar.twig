@@ -6,7 +6,7 @@
         {% if section|length %}
           {% for element in section %}
             <div class="field" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
-              <a href="{{ element.cpEditUrl }}" class="flex flex-nowrap gap-s">
+              <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s">
                 <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
                 <span class="cp-icon small">
                   {% switch key %}
@@ -46,7 +46,7 @@
                 <div class="field" style="min-height: 34px; padding-top: 0; padding-bottom: 12px; border-top: none;">
                   <div class="flex flex-nowrap gap-s" style="padding-left: var(--m);">
                     <span style="position: relative; top: -3px;">∟</span>
-                    <a href="{{ element.cpEditUrl }}" class="flex flex-nowrap gap-s">
+                    <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s">
                       <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
                       <span class="cp-icon small">
                       {% switch key %}

@@ -74,7 +74,7 @@ class RelatedElements extends Plugin
         $currentSiteHandle = Craft::$app->getSites()->getSiteById($currentSiteId)->handle;
 
         foreach ($relatedTypes as $type => $class) {
-            $relatedElements[$type] = $class::find()
+            $elements = $class::find()
                 ->relatedTo($element)
                 ->status(null)
                 ->site('*')
@@ -83,13 +83,29 @@ class RelatedElements extends Plugin
                 ->orderBy('title')
                 ->all();
 
+            $relatedElements[$type] = array_filter($elements, function($el) {
+                try {
+                    return $el->getFieldLayout() !== null;
+                } catch (\Throwable $e) {
+                    Craft::error("Error checking field layout for element {$el->id}: " . $e->getMessage(), __METHOD__);
+                    return false;
+                }
+            });
+
             if (!empty($relatedElements[$type])) {
                 $hasResults = true;
             }
         }
 
         if ($enableNestedElements) {
-            $this->findNestedElements($element->getFieldLayout()->getCustomFields(), $element, $nestedRelatedElements, $hasResults, $relatedTypes);
+            $fieldLayout = $element->getFieldLayout();
+            $this->findNestedElements(
+                $fieldLayout ? $fieldLayout->getCustomFields() : [],
+                $element,
+                $nestedRelatedElements,
+                $hasResults,
+                $relatedTypes
+            );
         }
 
         return Craft::$app->getView()->renderTemplate(
@@ -168,12 +184,21 @@ class RelatedElements extends Plugin
                                         ->orderBy('title')
                                         ->all();
 
-                                    if (!empty($newElements)) {
+                                    $filteredElements = array_filter($newElements, function($el) {
+                                        try {
+                                            return $el->getFieldLayout() !== null;
+                                        } catch (\Throwable $e) {
+                                            Craft::error("Error checking nested element layout {$el->id}: " . $e->getMessage(), __METHOD__);
+                                            return false;
+                                        }
+                                    });
+
+                                    if (!empty($filteredElements)) {
                                         if (!isset($nestedRelatedElements[$fieldName][$type])) {
                                             $nestedRelatedElements[$fieldName][$type] = [];
                                         }
 
-                                        foreach ($newElements as $newElement) {
+                                        foreach ($filteredElements as $newElement) {
                                             $exists = false;
                                             foreach ($nestedRelatedElements[$fieldName][$type] as $existingElement) {
                                                 if ($existingElement->id === $newElement->id) {
