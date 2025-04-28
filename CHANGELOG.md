@@ -1,5 +1,9 @@
 # Release Notes for Related Elements
 
+## 1.1.4 - 2025-04-28
+### Fixed
+- Error handling for related elements without fieldLayout.
+
 ## 1.1.3 - 2025-04-09
 ### Added
 - Improve error handling.
