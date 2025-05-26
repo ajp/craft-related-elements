@@ -1,5 +1,10 @@
 # Release Notes for Related Elements
 
+## Unreleased
+### Added
+- "Show More" functionality to limit visible related elements with configurable initial limit.
+- New `initialLimit` setting to control how many elements are shown initially (default: 10).
+
 ## 1.1.4 - 2025-04-28
 ### Fixed
 - Error handling for related elements without fieldLayout.

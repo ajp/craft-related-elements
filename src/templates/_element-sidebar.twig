@@ -2,10 +2,27 @@
   <legend class="h6">Related elements</legend>
   <div class="meta">
     {% if hasResults %}
+      {% set totalElements = 0 %}
+      {% for key, section in relatedElements %}
+        {% if section|length %}
+          {% set totalElements = totalElements + section|length %}
+        {% endif %}
+      {% endfor %}
+      {% for fieldKey, field in nestedRelatedElements %}
+        {% for key, section in field %}
+          {% if section|length %}
+            {% set totalElements = totalElements + section|length %}
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+
+      {% set elementIndex = 0 %}
+
       {% for key, section in relatedElements %}
         {% if section|length %}
           {% for element in section %}
-            <div class="field" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
+            {% set elementIndex = elementIndex + 1 %}
+            <div class="field related-element-item" data-index="{{ elementIndex - 1 }}" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
               <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s">
                 <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
                 <span class="cp-icon small">
@@ -26,6 +43,7 @@
           {% endfor %}
         {% endif %}
       {% endfor %}
+
       {% for fieldKey, field in nestedRelatedElements %}
         {% set hasFieldElements = false %}
         {% for section in field %}
@@ -35,15 +53,15 @@
         {% endfor %}
 
         {% if hasFieldElements %}
-          <div class="field" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
-            <em>
-              {{ fieldKey }}
-            </em>
+          {% set headerIndex = elementIndex %}
+          <div class="field nested-field-header" data-index="{{ headerIndex }}" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
+            <em>{{ fieldKey }}</em>
           </div>
           {% for key, section in field %}
             {% if section|length %}
               {% for element in section %}
-                <div class="field" style="min-height: 34px; padding-top: 0; padding-bottom: 12px; border-top: none;">
+                {% set elementIndex = elementIndex + 1 %}
+                <div class="field related-element-item" data-index="{{ elementIndex - 1 }}" data-header="{{ headerIndex }}" style="min-height: 34px; padding-top: 0; padding-bottom: 12px; border-top: none;">
                   <div class="flex flex-nowrap gap-s" style="padding-left: var(--m);">
                     <span style="position: relative; top: -3px;">∟</span>
                     <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s">
@@ -69,6 +87,17 @@
           {% endfor %}
         {% endif %}
       {% endfor %}
+
+      {% if totalElements > (initialLimit ?? 10) %}
+        <div class="field show-more-container" style="padding-block: 6px; padding-inline: var(--m) var(--s); border-top: none;">
+          <button type="button" class="btn small show-more-btn">
+            Show {{ totalElements - (initialLimit ?? 10) }} more related elements
+          </button>
+          <button type="button" class="btn small show-less-btn" style="display: none;">
+            Show less
+          </button>
+        </div>
+      {% endif %}
     {% else %}
       <div class="field flex-1">
         <div style="padding-block: 12px; padding-inline: var(--m) var(--s);">
@@ -78,3 +107,88 @@
     {% endif %}
   </div>
 </fieldset>
+
+<script>
+  (function() {
+    'use strict';
+
+    const initialLimit = {{ initialLimit ?? 10 }};
+
+    function initializeRelatedElements() {
+      const items = document.querySelectorAll('.related-elements-sidebar .related-element-item[data-index]');
+      const headers = document.querySelectorAll('.related-elements-sidebar .nested-field-header[data-index]');
+      const showMoreBtn = document.querySelector('.related-elements-sidebar .show-more-btn');
+      const showLessBtn = document.querySelector('.related-elements-sidebar .show-less-btn');
+
+      if (items.length <= initialLimit) {
+        return;
+      }
+
+      function hideElementsAndHeaders() {
+        items.forEach(function(item, index) {
+          if (index >= initialLimit) {
+            item.style.display = 'none';
+          }
+        });
+
+        headers.forEach(function(header) {
+          const headerIndex = parseInt(header.getAttribute('data-index'));
+          const relatedElements = document.querySelectorAll('.related-element-item[data-header="' + headerIndex + '"]');
+          let hasVisibleElements = false;
+
+          relatedElements.forEach(function(element) {
+            if (element.style.display !== 'none') {
+              hasVisibleElements = true;
+            }
+          });
+
+          if (!hasVisibleElements) {
+            header.style.display = 'none';
+          } else {
+            header.style.display = '';
+          }
+        });
+      }
+
+      function showAllElementsAndHeaders() {
+        items.forEach(function(item) {
+          item.style.display = '';
+        });
+
+        headers.forEach(function(header) {
+          header.style.display = '';
+        });
+      }
+
+      hideElementsAndHeaders();
+
+      if (showMoreBtn) {
+        showMoreBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          showAllElementsAndHeaders();
+          showMoreBtn.style.display = 'none';
+          if (showLessBtn) {
+            showLessBtn.style.display = '';
+          }
+        });
+      }
+
+      if (showLessBtn) {
+        showLessBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          hideElementsAndHeaders();
+          showLessBtn.style.display = 'none';
+          if (showMoreBtn) {
+            showMoreBtn.style.display = '';
+          }
+        });
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeRelatedElements);
+    } else {
+      setTimeout(initializeRelatedElements, 100);
+    }
+  })();
+</script>
