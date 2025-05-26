@@ -114,6 +114,7 @@ class RelatedElements extends Plugin
                 'hasResults' => $hasResults,
                 'relatedElements' => $relatedElements,
                 'nestedRelatedElements' => $nestedRelatedElements,
+                'initialLimit' => self::$settings->initialLimit,
             ]
         );
     }

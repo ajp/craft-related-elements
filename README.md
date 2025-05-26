@@ -40,5 +40,11 @@ Configure options in the control panel under Settings → Related Elements or cr
 
 return [
     'enableNestedElements' => true,
+    'initialLimit' => 10,
 ];
 ```
+
+### Settings
+
+- **enableNestedElements** (boolean, default: `true`) - Whether to display the related elements that exist inside the Matrix or Neo fields of an element.
+- **initialLimit** (integer, default: `10`) - Number of related elements to show initially before requiring "Show More" to expand the list.
