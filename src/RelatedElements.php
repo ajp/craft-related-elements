@@ -10,6 +10,7 @@ use craft\elements\Asset;
 use craft\elements\Category;
 use craft\elements\Entry;
 use craft\events\DefineHtmlEvent;
+use craft\fields\BaseRelationField;
 use craft\fields\Matrix;
 use mindseekermedia\craftrelatedelements\models\Settings;
 use yii\base\Event;
@@ -66,36 +67,27 @@ class RelatedElements extends Plugin
             'Asset' => Asset::class,
         ];
 
-        $relatedElements = [];
+        $outgoingRelatedElements = [
+            'Entry' => [],
+            'Category' => [],
+            'Asset' => []
+        ];
+        $incomingRelatedElements = [
+            'Entry' => [],
+            'Category' => [],
+            'Asset' => []
+        ];
         $nestedRelatedElements = [];
         $hasResults = false;
         $enableNestedElements = self::$settings->enableNestedElements;
         $currentSiteId = $element->siteId;
         $currentSiteHandle = Craft::$app->getSites()->getSiteById($currentSiteId)->handle;
 
-        foreach ($relatedTypes as $type => $class) {
-            $elements = $class::find()
-                ->relatedTo($element)
-                ->status(null)
-                ->site('*')
-                ->unique()
-                ->preferSites([$currentSiteHandle])
-                ->orderBy('title')
-                ->all();
+        // Find outgoing relationships (elements this entry references)
+        $this->findOutgoingRelationships($element, $relatedTypes, $outgoingRelatedElements, $hasResults, $currentSiteHandle);
 
-            $relatedElements[$type] = array_filter($elements, function($el) {
-                try {
-                    return $el->getFieldLayout() !== null;
-                } catch (\Throwable $e) {
-                    Craft::error("Error checking field layout for element {$el->id}: " . $e->getMessage(), __METHOD__);
-                    return false;
-                }
-            });
-
-            if (!empty($relatedElements[$type])) {
-                $hasResults = true;
-            }
-        }
+        // Find incoming relationships (elements that reference this entry)
+        $this->findIncomingRelationships($element, $relatedTypes, $incomingRelatedElements, $hasResults, $currentSiteHandle);
 
         if ($enableNestedElements) {
             $fieldLayout = $element->getFieldLayout();
@@ -108,15 +100,213 @@ class RelatedElements extends Plugin
             );
         }
 
+        // Determine element type for display text
+        $elementType = 'element';
+        if ($element instanceof Entry) {
+            $elementType = 'entry';
+        } elseif ($element instanceof Category) {
+            $elementType = 'category';
+        } elseif ($element instanceof Asset) {
+            $elementType = 'asset';
+        }
+
         return Craft::$app->getView()->renderTemplate(
             'related-elements/_element-sidebar',
             [
                 'hasResults' => $hasResults,
-                'relatedElements' => $relatedElements,
+                'outgoingRelatedElements' => $outgoingRelatedElements,
+                'incomingRelatedElements' => $incomingRelatedElements,
                 'nestedRelatedElements' => $nestedRelatedElements,
                 'initialLimit' => self::$settings->initialLimit,
+                'elementType' => $elementType,
             ]
         );
+    }
+
+    private function findOutgoingRelationships(Element $element, array $relatedTypes, array &$outgoingRelatedElements, bool &$hasResults, string $currentSiteHandle): void
+    {
+        try {
+            $fieldLayout = $element->getFieldLayout();
+            if (!$fieldLayout) {
+                return;
+            }
+
+            $fields = $fieldLayout->getCustomFields();
+
+            foreach ($fields as $field) {
+                if (!$field || !$field->handle) {
+                    continue;
+                }
+
+                // Check if this is a relational field by checking if it's an instance of BaseRelationField
+                $isRelationalField = $field instanceof BaseRelationField;
+
+                if (!$isRelationalField) {
+                    continue;
+                }
+
+                try {
+                    $fieldValue = $element->getFieldValue($field->handle);
+
+                    if (!$fieldValue) {
+                        continue;
+                    }
+
+                    // Handle different field value types
+                    $relatedElements = [];
+
+                    if (is_iterable($fieldValue)) {
+                        foreach ($fieldValue as $relatedElement) {
+                            if ($relatedElement instanceof Element) {
+                                $relatedElements[] = $relatedElement;
+                            }
+                        }
+                    } elseif ($fieldValue instanceof Element) {
+                        $relatedElements[] = $fieldValue;
+                    }
+
+                    // Categorize the related elements by type
+                    foreach ($relatedElements as $relatedElement) {
+                        foreach ($relatedTypes as $type => $class) {
+                            if ($relatedElement instanceof $class) {
+                                try {
+                                    if ($relatedElement->getFieldLayout() !== null) {
+                                        if (!isset($outgoingRelatedElements[$type])) {
+                                            $outgoingRelatedElements[$type] = [];
+                                        }
+
+                                        // Check if element already exists to avoid duplicates
+                                        $exists = false;
+                                        foreach ($outgoingRelatedElements[$type] as $existingElement) {
+                                            if ($existingElement->id === $relatedElement->id) {
+                                                $exists = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if (!$exists) {
+                                            $outgoingRelatedElements[$type][] = $relatedElement;
+                                            $hasResults = true;
+                                        }
+                                    }
+                                } catch (\Throwable $e) {
+                                    Craft::error("Error checking field layout for outgoing element {$relatedElement->id}: " . $e->getMessage(), __METHOD__);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    Craft::warning("Error processing field {$field->handle} for outgoing relationships: " . $e->getMessage(), __METHOD__);
+                    continue;
+                }
+            }
+        } catch (\Throwable $e) {
+            Craft::error("Error finding outgoing relationships: " . $e->getMessage(), __METHOD__);
+        }
+    }
+
+        private function findIncomingRelationships(Element $element, array $relatedTypes, array &$incomingRelatedElements, bool &$hasResults, string $currentSiteHandle): void
+    {
+        try {
+            // Use Craft's relatedTo with targetElement to find elements that reference this element
+            foreach ($relatedTypes as $type => $class) {
+                $elements = $class::find()
+                    ->relatedTo([
+                        'targetElement' => $element,
+                        'field' => null
+                    ])
+                    ->status(null)
+                    ->site('*')
+                    ->unique()
+                    ->preferSites([$currentSiteHandle])
+                    ->orderBy('title')
+                    ->all();
+
+                $filteredElements = array_filter($elements, function($el) use ($element) {
+                    try {
+                        // Don't include the element itself and ensure it has a field layout
+                        return $el->id !== $element->id && $el->getFieldLayout() !== null;
+                    } catch (\Throwable $e) {
+                        Craft::error("Error checking field layout for incoming element {$el->id}: " . $e->getMessage(), __METHOD__);
+                        return false;
+                    }
+                });
+
+                // Verify these are actually incoming relationships by checking their field values
+                foreach ($filteredElements as $candidateElement) {
+                    try {
+                        $fieldLayout = $candidateElement->getFieldLayout();
+                        if (!$fieldLayout) {
+                            continue;
+                        }
+
+                        $fields = $fieldLayout->getCustomFields();
+                        $actuallyReferences = false;
+
+                        foreach ($fields as $field) {
+                            if (!$field || !$field->handle || !($field instanceof BaseRelationField)) {
+                                continue;
+                            }
+
+                            try {
+                                $fieldValue = $candidateElement->getFieldValue($field->handle);
+
+                                if (!$fieldValue) {
+                                    continue;
+                                }
+
+                                // Check if this field contains the current element
+                                $relatedElements = [];
+
+                                if (is_iterable($fieldValue)) {
+                                    foreach ($fieldValue as $relatedElement) {
+                                        if ($relatedElement instanceof Element) {
+                                            $relatedElements[] = $relatedElement;
+                                        }
+                                    }
+                                } elseif ($fieldValue instanceof Element) {
+                                    $relatedElements[] = $fieldValue;
+                                }
+
+                                // Check if the current element is in this field's values
+                                foreach ($relatedElements as $relatedElement) {
+                                    if ($relatedElement->id === $element->id) {
+                                        $actuallyReferences = true;
+                                        break 2; // Break out of both loops
+                                    }
+                                }
+                            } catch (\Throwable $e) {
+                                Craft::warning("Error processing field {$field->handle} for incoming verification: " . $e->getMessage(), __METHOD__);
+                                continue;
+                            }
+                        }
+
+                        // Only add if it actually references the current element
+                        if ($actuallyReferences) {
+                            // Check if element already exists to avoid duplicates
+                            $exists = false;
+                            foreach ($incomingRelatedElements[$type] as $existingElement) {
+                                if ($existingElement->id === $candidateElement->id) {
+                                    $exists = true;
+                                    break;
+                                }
+                            }
+
+                            if (!$exists) {
+                                $incomingRelatedElements[$type][] = $candidateElement;
+                                $hasResults = true;
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        Craft::warning("Error verifying incoming relationship for element {$candidateElement->id}: " . $e->getMessage(), __METHOD__);
+                        continue;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Craft::error("Error finding incoming relationships: " . $e->getMessage(), __METHOD__);
+        }
     }
 
     private function findNestedElements(array $fields, Element $element, array &$nestedRelatedElements, bool &$hasResults, array $relatedTypes, string $fieldPath = ''): void

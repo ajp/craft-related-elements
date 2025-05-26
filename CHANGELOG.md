@@ -4,6 +4,7 @@
 ### Added
 - "Show More" functionality to limit visible related elements with configurable initial limit.
 - New `initialLimit` setting to control how many elements are shown initially (default: 10).
+- Related elements are now organized based on relationship direction.
 
 ## 1.1.4 - 2025-04-28
 ### Fixed
