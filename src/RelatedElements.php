@@ -206,7 +206,7 @@ class RelatedElements extends Plugin
         }
     }
 
-        private function findIncomingRelationships(Element $element, array $relatedTypes, array &$incomingRelatedElements, bool &$hasResults, string $currentSiteHandle): void
+    private function findIncomingRelationships(Element $element, array $relatedTypes, array &$incomingRelatedElements, bool &$hasResults, string $currentSiteHandle): void
     {
         try {
             // Use Craft's relatedTo with targetElement to find elements that reference this element
@@ -245,7 +245,14 @@ class RelatedElements extends Plugin
                         $actuallyReferences = false;
 
                         foreach ($fields as $field) {
-                            if (!$field || !$field->handle || !($field instanceof BaseRelationField)) {
+                            if (!$field || !$field->handle) {
+                                continue;
+                            }
+
+                            $isRelationalField = $field instanceof BaseRelationField;
+                            $isCKEditorField = class_exists('\craft\ckeditor\Field') && $field instanceof \craft\ckeditor\Field;
+
+                            if (!$isRelationalField && !$isCKEditorField) {
                                 continue;
                             }
 
@@ -259,14 +266,35 @@ class RelatedElements extends Plugin
                                 // Check if this field contains the current element
                                 $relatedElements = [];
 
-                                if (is_iterable($fieldValue)) {
-                                    foreach ($fieldValue as $relatedElement) {
-                                        if ($relatedElement instanceof Element) {
-                                            $relatedElements[] = $relatedElement;
+                                if ($isCKEditorField) {
+                                    // Handle CKEditor field with embedded entries
+                                    try {
+                                        if (is_iterable($fieldValue)) {
+                                            foreach ($fieldValue as $chunk) {
+                                                // Check if this chunk is an entry type (embedded entry)
+                                                if (isset($chunk->type) && $chunk->type === 'entry' && isset($chunk->entry)) {
+                                                    $embeddedEntry = $chunk->entry;
+                                                    if ($embeddedEntry instanceof Element) {
+                                                        $relatedElements[] = $embeddedEntry;
+                                                    }
+                                                }
+                                            }
                                         }
+                                    } catch (\Throwable $e) {
+                                        Craft::warning("Error processing CKEditor field {$field->handle} for embedded entries in incoming verification: " . $e->getMessage(), __METHOD__);
+                                        continue;
                                     }
-                                } elseif ($fieldValue instanceof Element) {
-                                    $relatedElements[] = $fieldValue;
+                                } else {
+                                    // Handle regular relational fields
+                                    if (is_iterable($fieldValue)) {
+                                        foreach ($fieldValue as $relatedElement) {
+                                            if ($relatedElement instanceof Element) {
+                                                $relatedElements[] = $relatedElement;
+                                            }
+                                        }
+                                    } elseif ($fieldValue instanceof Element) {
+                                        $relatedElements[] = $fieldValue;
+                                    }
                                 }
 
                                 // Check if the current element is in this field's values
@@ -332,6 +360,7 @@ class RelatedElements extends Plugin
 
                 $isMatrixField = $field instanceof Matrix;
                 $isNeoField = class_exists('\benf\neo\Field') && get_class($field) === \benf\neo\Field::class;
+                $isCKEditorField = class_exists('\craft\ckeditor\Field') && $field instanceof \craft\ckeditor\Field;
 
                 if ($isMatrixField || $isNeoField) {
                     try {
@@ -409,6 +438,64 @@ class RelatedElements extends Plugin
                                 // Recursively check for nested Matrix/Neo fields within this block
                                 $blockFields = $fieldLayout->getCustomFields();
                                 if (!empty($blockFields)) {
+                                    // Also check for CKEditor fields within this block that might contain embedded entries
+                                    foreach ($blockFields as $blockField) {
+                                        if (!$blockField || !$blockField->handle) {
+                                            continue;
+                                        }
+
+                                        $isCKEditorField = class_exists('\craft\ckeditor\Field') && $blockField instanceof \craft\ckeditor\Field;
+
+                                        if ($isCKEditorField) {
+                                            try {
+                                                $ckeditorFieldValue = $block->getFieldValue($blockField->handle);
+
+                                                if ($ckeditorFieldValue && is_iterable($ckeditorFieldValue)) {
+                                                    foreach ($ckeditorFieldValue as $chunk) {
+                                                        // Check if this chunk is an entry type (embedded entry)
+                                                        if (isset($chunk->type) && $chunk->type === 'entry' && isset($chunk->entry)) {
+                                                            $embeddedEntry = $chunk->entry;
+                                                            if ($embeddedEntry instanceof Element) {
+                                                                // Categorize the embedded entry by type
+                                                                foreach ($relatedTypes as $type => $class) {
+                                                                    if ($embeddedEntry instanceof $class) {
+                                                                        try {
+                                                                            if ($embeddedEntry->getFieldLayout() !== null) {
+                                                                                if (!isset($nestedRelatedElements[$fieldName][$type])) {
+                                                                                    $nestedRelatedElements[$fieldName][$type] = [];
+                                                                                }
+
+                                                                                // Check if element already exists to avoid duplicates
+                                                                                $exists = false;
+                                                                                foreach ($nestedRelatedElements[$fieldName][$type] as $existingElement) {
+                                                                                    if ($existingElement->id === $embeddedEntry->id) {
+                                                                                        $exists = true;
+                                                                                        break;
+                                                                                    }
+                                                                                }
+
+                                                                                if (!$exists) {
+                                                                                    $nestedRelatedElements[$fieldName][$type][] = $embeddedEntry;
+                                                                                    $hasResults = true;
+                                                                                }
+                                                                            }
+                                                                        } catch (\Throwable $e) {
+                                                                            Craft::error("Error checking field layout for CKEditor embedded element {$embeddedEntry->id}: " . $e->getMessage(), __METHOD__);
+                                                                        }
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            } catch (\Throwable $e) {
+                                                Craft::warning("Error processing CKEditor field {$blockField->handle} in nested block: " . $e->getMessage(), __METHOD__);
+                                                continue;
+                                            }
+                                        }
+                                    }
+
                                     $this->findNestedElements(
                                         $blockFields,
                                         $block,
@@ -427,6 +514,65 @@ class RelatedElements extends Plugin
                     } catch (\Throwable $e) {
                         // Log the error but continue processing other fields
                         Craft::warning('Error processing field in Related Elements plugin: ' . $e->getMessage(), __METHOD__);
+                        continue;
+                    }
+                } elseif ($isCKEditorField) {
+                    // Handle CKEditor fields at the top level
+                    try {
+                        $ckeditorFieldValue = $element->getFieldValue($field->handle);
+
+                        if (!$ckeditorFieldValue) {
+                            continue;
+                        }
+
+                        $fieldName = $fieldPath ? $fieldPath . ' → ' . $field->name : $field->name;
+
+                        if (!isset($nestedRelatedElements[$fieldName])) {
+                            $nestedRelatedElements[$fieldName] = [];
+                        }
+
+                        if (is_iterable($ckeditorFieldValue)) {
+                            foreach ($ckeditorFieldValue as $chunk) {
+                                // Check if this chunk is an entry type (embedded entry)
+                                if (isset($chunk->type) && $chunk->type === 'entry' && isset($chunk->entry)) {
+                                    $embeddedEntry = $chunk->entry;
+                                    if ($embeddedEntry instanceof Element) {
+                                        // Categorize the embedded entry by type
+                                        foreach ($relatedTypes as $type => $class) {
+                                            if ($embeddedEntry instanceof $class) {
+                                                try {
+                                                    if ($embeddedEntry->getFieldLayout() !== null) {
+                                                        if (!isset($nestedRelatedElements[$fieldName][$type])) {
+                                                            $nestedRelatedElements[$fieldName][$type] = [];
+                                                        }
+
+                                                        // Check if element already exists to avoid duplicates
+                                                        $exists = false;
+                                                        foreach ($nestedRelatedElements[$fieldName][$type] as $existingElement) {
+                                                            if ($existingElement->id === $embeddedEntry->id) {
+                                                                $exists = true;
+                                                                break;
+                                                            }
+                                                        }
+
+                                                        if (!$exists) {
+                                                            $nestedRelatedElements[$fieldName][$type][] = $embeddedEntry;
+                                                            $hasResults = true;
+                                                        }
+                                                    }
+                                                } catch (\Throwable $e) {
+                                                    Craft::error("Error checking field layout for CKEditor embedded element {$embeddedEntry->id}: " . $e->getMessage(), __METHOD__);
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // Log the error but continue processing other fields
+                        Craft::warning("Error processing CKEditor field {$field->handle}: " . $e->getMessage(), __METHOD__);
                         continue;
                     }
                 }
