@@ -46,5 +46,5 @@ return [
 
 ### Settings
 
-- **enableNestedElements** (boolean, default: `true`) - Whether to display the related elements that exist inside the Matrix or Neo fields of an element.
+- **enableNestedElements** (boolean, default: `true`) - Whether to display the related elements that exist inside the CKEditor, Matrix or Neo fields of an element.
 - **initialLimit** (integer, default: `10`) - Number of related elements to show initially before requiring "Show More" to expand the list.
