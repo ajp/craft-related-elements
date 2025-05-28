@@ -1,3 +1,15 @@
+<style>
+.related-elements-sidebar .cp-icon[style*="--icon-color"] svg {
+  fill: var(--icon-color) !important;
+  stroke: var(--icon-color) !important;
+  color: var(--icon-color) !important;
+}
+.related-elements-sidebar .cp-icon[style*="--icon-color"] svg * {
+  fill: var(--icon-color) !important;
+  stroke: var(--icon-color) !important;
+}
+</style>
+
 {# Macro for element type pill #}
 {% macro elementTypePill(elementType) %}
   <span class="element-type-pill" style="
@@ -111,17 +123,21 @@
                 <div class="flex flex-nowrap gap-s" style="padding-left: var(--m);">
                   <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
                     <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
-                    <span class="cp-icon small">
-                      {% switch key %}
-                        {% case 'Entry' %}
-                          {{ iconSvg('newspaper') }}
-                        {% case 'Category' %}
-                          {{ iconSvg('sitemap') }}
-                        {% case 'Asset' %}
-                          {{ iconSvg('asset') }}
-                        {% case 'Tag' %}
-                          {{ iconSvg('tags') }}
-                      {% endswitch %}
+                    <span class="cp-icon small"{% if element.type is defined and element.type.color is defined and element.type.color %} style="color: {{ element.type.color.value }} !important; --icon-color: {{ element.type.color.value }};"{% endif %}>
+                      {% if element.type is defined and element.type.icon is defined and element.type.icon %}
+                        {{ iconSvg(element.type.icon) }}
+                      {% else %}
+                        {% switch key %}
+                          {% case 'Entry' %}
+                            {{ iconSvg('newspaper') }}
+                          {% case 'Category' %}
+                            {{ iconSvg('sitemap') }}
+                          {% case 'Asset' %}
+                            {{ iconSvg('asset') }}
+                          {% case 'Tag' %}
+                            {{ iconSvg('tags') }}
+                        {% endswitch %}
+                      {% endif %}
                     </span>
                     <span style="word-break: break-word;">
                       {{ element.title ?? element.id }}
@@ -160,21 +176,25 @@
                       <span style="position: relative; top: -3px;">∟</span>
                       <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
                         <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
-                        <span class="cp-icon small">
-                        {% switch key %}
-                        {% case 'Entry' %}
-                          {{ iconSvg('newspaper') }}
-                        {% case 'Category' %}
-                          {{ iconSvg('sitemap') }}
-                        {% case 'Asset' %}
-                          {{ iconSvg('asset') }}
-                        {% case 'Tag' %}
-                          {{ iconSvg('tags') }}
-                        {% endswitch %}
-                      </span>
+                        <span class="cp-icon small"{% if element.type is defined and element.type.color is defined and element.type.color %} style="color: {{ element.type.color.value }} !important; --icon-color: {{ element.type.color.value }};"{% endif %}>
+                          {% if element.type is defined and element.type.icon is defined and element.type.icon %}
+                            {{ iconSvg(element.type.icon) }}
+                          {% else %}
+                            {% switch key %}
+                              {% case 'Entry' %}
+                                {{ iconSvg('newspaper') }}
+                              {% case 'Category' %}
+                                {{ iconSvg('sitemap') }}
+                              {% case 'Asset' %}
+                                {{ iconSvg('asset') }}
+                              {% case 'Tag' %}
+                                {{ iconSvg('tags') }}
+                            {% endswitch %}
+                          {% endif %}
+                        </span>
                         <span style="word-break: break-word;">
-                        {{ element.title ?? element.id }}
-                      </span>
+                          {{ element.title ?? element.id }}
+                        </span>
                         {% if showElementTypeLabel %}{{ _self.elementTypePill(key) }}{% endif %}
                       </a>
                     </div>
@@ -224,17 +244,21 @@
                   <div class="flex flex-nowrap gap-s items-center" style="padding-left: var(--m);">
                     <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
                       <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
-                      <span class="cp-icon small">
-                        {% switch key %}
-                          {% case 'Entry' %}
-                            {{ iconSvg('newspaper') }}
-                          {% case 'Category' %}
-                            {{ iconSvg('sitemap') }}
-                          {% case 'Asset' %}
-                            {{ iconSvg('asset') }}
-                          {% case 'Tag' %}
-                            {{ iconSvg('tags') }}
-                        {% endswitch %}
+                      <span class="cp-icon small"{% if element.type is defined and element.type.color is defined and element.type.color %} style="color: {{ element.type.color.value }} !important; --icon-color: {{ element.type.color.value }};"{% endif %}>
+                        {% if element.type is defined and element.type.icon is defined and element.type.icon %}
+                          {{ iconSvg(element.type.icon) }}
+                        {% else %}
+                          {% switch key %}
+                            {% case 'Entry' %}
+                              {{ iconSvg('newspaper') }}
+                            {% case 'Category' %}
+                              {{ iconSvg('sitemap') }}
+                            {% case 'Asset' %}
+                              {{ iconSvg('asset') }}
+                            {% case 'Tag' %}
+                              {{ iconSvg('tags') }}
+                          {% endswitch %}
+                        {% endif %}
                       </span>
                       <span style="word-break: break-word;">
                         {{ element.title ?? element.id }}
