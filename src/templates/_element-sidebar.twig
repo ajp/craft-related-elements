@@ -121,7 +121,11 @@
               {% set elementIndex = elementIndex + 1 %}
               <div class="field related-element-item outgoing-element" data-index="{{ elementIndex - 1 }}" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
                 <div class="flex flex-nowrap gap-s" style="padding-left: var(--m);">
-                  <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
+                  {% if key == 'Tag' %}
+                    <a href="#" class="flex flex-nowrap gap-s items-center tag-link" data-tag-id="{{ element.id }}">
+                  {% else %}
+                    <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
+                  {% endif %}
                     <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
                     <span class="cp-icon small"{% if element.type is defined and element.type.color is defined and element.type.color %} style="color: {{ element.type.color.value }} !important; --icon-color: {{ element.type.color.value }};"{% endif %}>
                       {% if element.type is defined and element.type.icon is defined and element.type.icon %}
@@ -174,7 +178,11 @@
                   <div class="field related-element-item nested-element" data-index="{{ elementIndex - 1 }}" data-header="{{ headerIndex }}" style="min-height: 34px; padding-top: 0; padding-bottom: 12px; padding-right: var(--m); border-top: none;">
                     <div class="flex flex-nowrap gap-s items-center" style="padding-left: calc(var(--s) * 4);">
                       <span style="position: relative; top: -3px;">∟</span>
-                      <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
+                      {% if key == 'Tag' %}
+                        <a href="#" class="flex flex-nowrap gap-s items-center tag-link" data-tag-id="{{ element.id }}">
+                      {% else %}
+                        <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
+                      {% endif %}
                         <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
                         <span class="cp-icon small"{% if element.type is defined and element.type.color is defined and element.type.color %} style="color: {{ element.type.color.value }} !important; --icon-color: {{ element.type.color.value }};"{% endif %}>
                           {% if element.type is defined and element.type.icon is defined and element.type.icon %}
@@ -242,7 +250,11 @@
               {% set elementIndex = elementIndex + 1 %}
                 <div class="field related-element-item incoming-element" data-index="{{ elementIndex - 1 }}" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
                   <div class="flex flex-nowrap gap-s items-center" style="padding-left: var(--m);">
-                    <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
+                    {% if key == 'Tag' %}
+                      <a href="#" class="flex flex-nowrap gap-s items-center tag-link" data-tag-id="{{ element.id }}">
+                    {% else %}
+                      <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
+                    {% endif %}
                       <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
                       <span class="cp-icon small"{% if element.type is defined and element.type.color is defined and element.type.color %} style="color: {{ element.type.color.value }} !important; --icon-color: {{ element.type.color.value }};"{% endif %}>
                         {% if element.type is defined and element.type.icon is defined and element.type.icon %}
@@ -420,6 +432,26 @@
       document.addEventListener('DOMContentLoaded', initializeRelatedElements);
     } else {
       setTimeout(initializeRelatedElements, 100);
+    }
+
+    // Handle tag link clicks using event delegation to prevent duplicate listeners
+    // Only add the listener if it hasn't been added already
+    if (!window.relatedElementsTagListenerAdded) {
+      window.relatedElementsTagListenerAdded = true;
+
+      document.addEventListener('click', function(e) {
+        // Check if the clicked element is a tag link within the related elements sidebar
+        if (e.target.closest('.related-elements-sidebar .tag-link')) {
+          e.preventDefault();
+          const tagLink = e.target.closest('.tag-link');
+          const tagId = tagLink.getAttribute('data-tag-id');
+          if (tagId && window.Craft && window.Craft.createElementEditor) {
+            window.Craft.createElementEditor('craft\\elements\\Tag', {
+              elementId: parseInt(tagId),
+            });
+          }
+        }
+      });
     }
   })();
 </script>
