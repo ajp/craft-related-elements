@@ -1,4 +1,8 @@
 {% import '_includes/forms.twig' as forms %}
+
+{# Check for config file overrides #}
+{% set configFileSettings = craft.app.config.getConfigFromFile('related-elements') %}
+
 <div>
   {{ forms.lightswitchField({
     label: 'Display nested related elements',
@@ -7,6 +11,8 @@
     value: settings.enableNestedElements,
     on: (settings.enableNestedElements is defined) ? settings.enableNestedElements : '',
     class: 'first',
+    warning: configFileSettings.enableNestedElements is defined ? 'This setting is being overridden by the "enableNestedElements" setting in your related-elements.php config file.' : null,
+    disabled: configFileSettings.enableNestedElements is defined,
   }) }}
 
   {{ forms.textField({
@@ -18,6 +24,8 @@
     min: 1,
     max: 100,
     size: 10,
+    warning: configFileSettings.initialLimit is defined ? 'This setting is being overridden by the "initialLimit" setting in your related-elements.php config file.' : null,
+    disabled: configFileSettings.initialLimit is defined,
   }) }}
 </div>
 
