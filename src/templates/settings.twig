@@ -6,13 +6,23 @@
 <div>
   {{ forms.lightswitchField({
     label: 'Display nested related elements',
-    instructions: 'Whether to display the related elements that exist inside the Matrix or Neo fields of an entry, category or asset.',
+    instructions: 'Whether to display the related elements that exist inside the CKEditor, Matrix or Neo fields of an element.',
     name: 'enableNestedElements',
     value: settings.enableNestedElements,
     on: (settings.enableNestedElements is defined) ? settings.enableNestedElements : '',
     class: 'first',
     warning: configFileSettings.enableNestedElements is defined ? 'This setting is being overridden by the "enableNestedElements" setting in your related-elements.php config file.' : null,
     disabled: configFileSettings.enableNestedElements is defined,
+  }) }}
+
+  {{ forms.lightswitchField({
+    label: 'Show element type labels',
+    instructions: 'Whether to display the element type labels (Entry, Category, Asset, Tag) next to each related element.',
+    name: 'showElementTypeLabel',
+    value: settings.showElementTypeLabel,
+    on: (settings.showElementTypeLabel is defined) ? settings.showElementTypeLabel : '',
+    warning: configFileSettings.showElementTypeLabel is defined ? 'This setting is being overridden by the "showElementTypeLabel" setting in your related-elements.php config file.' : null,
+    disabled: configFileSettings.showElementTypeLabel is defined,
   }) }}
 
   {{ forms.textField({

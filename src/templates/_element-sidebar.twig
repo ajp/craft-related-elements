@@ -1,3 +1,40 @@
+{# Macro for element type pill #}
+{% macro elementTypePill(elementType) %}
+  <span class="element-type-pill" style="
+    display: inline-block;
+    padding: 0px 5px;
+    border-radius: 8px;
+    font-size: 8px;
+    line-height: 14px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    margin-left: 4px;
+    {% switch elementType %}
+      {% case 'Entry' %}
+        background-color: #e3f2fd;
+        color: #1565c0;
+        border: 1px solid #bbdefb;
+      {% case 'Category' %}
+        background-color: #f3e5f5;
+        color: #7b1fa2;
+        border: 1px solid #e1bee7;
+      {% case 'Asset' %}
+        background-color: #e8f5e8;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+      {% case 'Tag' %}
+        background-color: #fff3e0;
+        color: #ef6c00;
+        border: 1px solid #ffcc02;
+      {% default %}
+        background-color: #f5f5f5;
+        color: #666;
+        border: 1px solid #ddd;
+    {% endswitch %}
+  ">{{ elementType }}</span>
+{% endmacro %}
+
 <fieldset class="related-elements-sidebar">
   <legend class="h6">Related elements</legend>
   <div class="meta">
@@ -72,7 +109,7 @@
               {% set elementIndex = elementIndex + 1 %}
               <div class="field related-element-item outgoing-element" data-index="{{ elementIndex - 1 }}" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
                 <div class="flex flex-nowrap gap-s" style="padding-left: var(--m);">
-                  <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s">
+                  <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
                     <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
                     <span class="cp-icon small">
                       {% switch key %}
@@ -82,11 +119,14 @@
                           {{ iconSvg('sitemap') }}
                         {% case 'Asset' %}
                           {{ iconSvg('asset') }}
+                        {% case 'Tag' %}
+                          {{ iconSvg('tags') }}
                       {% endswitch %}
                     </span>
                     <span style="word-break: break-word;">
                       {{ element.title ?? element.id }}
                     </span>
+                    {% if showElementTypeLabel %}{{ _self.elementTypePill(key) }}{% endif %}
                   </a>
                 </div>
               </div>
@@ -115,10 +155,10 @@
               {% if section|length %}
                 {% for element in section %}
                   {% set elementIndex = elementIndex + 1 %}
-                  <div class="field related-element-item nested-element" data-index="{{ elementIndex - 1 }}" data-header="{{ headerIndex }}" style="min-height: 34px; padding-top: 0; padding-bottom: 12px; border-top: none;">
-                    <div class="flex flex-nowrap gap-s" style="padding-left: calc(var(--s) * 4);">
+                  <div class="field related-element-item nested-element" data-index="{{ elementIndex - 1 }}" data-header="{{ headerIndex }}" style="min-height: 34px; padding-top: 0; padding-bottom: 12px; padding-right: var(--m); border-top: none;">
+                    <div class="flex flex-nowrap gap-s items-center" style="padding-left: calc(var(--s) * 4);">
                       <span style="position: relative; top: -3px;">∟</span>
-                      <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s">
+                      <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
                         <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
                         <span class="cp-icon small">
                         {% switch key %}
@@ -128,11 +168,14 @@
                           {{ iconSvg('sitemap') }}
                         {% case 'Asset' %}
                           {{ iconSvg('asset') }}
+                        {% case 'Tag' %}
+                          {{ iconSvg('tags') }}
                         {% endswitch %}
                       </span>
                         <span style="word-break: break-word;">
                         {{ element.title ?? element.id }}
                       </span>
+                        {% if showElementTypeLabel %}{{ _self.elementTypePill(key) }}{% endif %}
                       </a>
                     </div>
                   </div>
@@ -178,8 +221,8 @@
             {% for element in section %}
               {% set elementIndex = elementIndex + 1 %}
                 <div class="field related-element-item incoming-element" data-index="{{ elementIndex - 1 }}" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
-                  <div class="flex flex-nowrap gap-s" style="padding-left: var(--m);">
-                    <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s">
+                  <div class="flex flex-nowrap gap-s items-center" style="padding-left: var(--m);">
+                    <a href="{{ element.cpEditUrl ?? '#' }}" class="flex flex-nowrap gap-s items-center">
                       <span class="status small {{ element.status }}" role="img" aria-label="Status: {{ element.status }}" style="margin-inline-end: 0;"></span>
                       <span class="cp-icon small">
                         {% switch key %}
@@ -189,11 +232,14 @@
                             {{ iconSvg('sitemap') }}
                           {% case 'Asset' %}
                             {{ iconSvg('asset') }}
+                          {% case 'Tag' %}
+                            {{ iconSvg('tags') }}
                         {% endswitch %}
                       </span>
                       <span style="word-break: break-word;">
                         {{ element.title ?? element.id }}
                       </span>
+                      {% if showElementTypeLabel %}{{ _self.elementTypePill(key) }}{% endif %}
                     </a>
                   </div>
               </div>

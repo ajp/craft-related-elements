@@ -9,6 +9,7 @@ use craft\base\Plugin;
 use craft\elements\Asset;
 use craft\elements\Category;
 use craft\elements\Entry;
+use craft\elements\Tag;
 use craft\events\DefineHtmlEvent;
 use craft\fields\BaseRelationField;
 use craft\fields\Matrix;
@@ -53,7 +54,8 @@ class RelatedElements extends Plugin
             fn(DefineHtmlEvent $event) => $event->html .=
                 ($event->sender instanceof Entry ||
                     $event->sender instanceof Category ||
-                    $event->sender instanceof Asset)
+                    $event->sender instanceof Asset ||
+                    $event->sender instanceof Tag)
                     ? $this->renderTemplate($event->sender)
                     : ''
         );
@@ -65,17 +67,20 @@ class RelatedElements extends Plugin
             'Entry' => Entry::class,
             'Category' => Category::class,
             'Asset' => Asset::class,
+            'Tag' => Tag::class,
         ];
 
         $outgoingRelatedElements = [
             'Entry' => [],
             'Category' => [],
-            'Asset' => []
+            'Asset' => [],
+            'Tag' => [],
         ];
         $incomingRelatedElements = [
             'Entry' => [],
             'Category' => [],
-            'Asset' => []
+            'Asset' => [],
+            'Tag' => [],
         ];
         $nestedRelatedElements = [];
         $hasResults = false;
@@ -108,6 +113,8 @@ class RelatedElements extends Plugin
             $elementType = 'category';
         } elseif ($element instanceof Asset) {
             $elementType = 'asset';
+        } elseif ($element instanceof Tag) {
+            $elementType = 'tag';
         }
 
         return Craft::$app->getView()->renderTemplate(
@@ -119,6 +126,7 @@ class RelatedElements extends Plugin
                 'nestedRelatedElements' => $nestedRelatedElements,
                 'initialLimit' => self::$settings->initialLimit,
                 'elementType' => $elementType,
+                'showElementTypeLabel' => self::$settings->showElementTypeLabel,
             ]
         );
     }
