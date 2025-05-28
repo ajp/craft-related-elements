@@ -7,8 +7,12 @@
 - "Show More" functionality to limit visible related elements with configurable initial limit.
 - New `initialLimit` setting to control how many elements are shown initially (default: 10).
 - New `showElementTypeLabel` setting to control whether element type labels (Entry, Category, Asset, Tag) are displayed next to each related element (default: true).
-- Related elements are now organized based on relationship direction.
 - Support for CKEditor field related entries.
+- Custom icon and color support for entry types.
+
+### Changed
+
+- Related elements are now organized based on relationship direction.
 
 ## 1.1.4 - 2025-04-28
 
