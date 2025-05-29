@@ -12,11 +12,11 @@ This plugin requires Craft CMS 5.0.0 or later, and PHP 8.2 or later.
 
 You can install this plugin from the Plugin Store or with Composer.
 
-#### From the Plugin Store
+### From the Plugin Store
 
 Go to the Plugin Store in your project's Control Panel and search for "Related Elements". Then press "Install".
 
-#### With Composer
+### With Composer
 
 Open your terminal and run the following commands:
 
