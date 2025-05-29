@@ -97,7 +97,7 @@
       {% endfor %}
 
       {% if hasOutgoingElements or hasNestedElements %}
-        <div class="field relationship-section-header" style="padding-block: 8px; padding-inline: var(--m) var(--s); background-color: var(--gray-050); border-radius: 4px; margin-bottom: 4px;">
+        <div class="field relationship-section-header" style="padding-block: 8px; padding-inline: var(--m); background-color: var(--gray-050); border-radius: 4px; margin-bottom: 4px;">
           <div class="flex flex-nowrap gap-s items-center">
             <strong style="font-size: 14px; color: var(--gray-700);">References</strong>
             <div style="position: relative; display: inline-block;">
@@ -165,7 +165,7 @@
 
           {% if hasFieldElements %}
             {% set headerIndex = elementIndex %}
-            <div class="field nested-field-header" data-index="{{ headerIndex }}" style="padding-block: 8px; padding-inline: var(--m) var(--s); border-radius: 4px; margin-bottom: 4px; margin-top: 8px;">
+            <div class="field nested-field-header" data-index="{{ headerIndex }}" style="padding-block: 8px; padding-inline: var(--m); border-radius: 4px; margin-bottom: 4px; margin-top: 8px;">
               <div class="flex flex-nowrap gap-s items-center" style="padding-left: var(--m);">
                 <strong style="font-size: 12px; color: var(--gray-700);">{{ fieldKey }}</strong>
               </div>
@@ -227,7 +227,7 @@
           <div style="margin-top: 12px;"></div>
         {% endif %}
 
-        <div class="field relationship-section-header" style="padding-block: 8px; padding-inline: var(--m) var(--s); background-color: var(--gray-050); border-radius: 4px; margin-bottom: 4px;">
+        <div class="field relationship-section-header" style="padding-block: 8px; padding-inline: var(--m); background-color: var(--gray-050); border-radius: 4px; margin-bottom: 4px;">
           <div class="flex flex-nowrap gap-s items-center">
             <strong style="font-size: 14px; color: var(--gray-700);">Referenced by</strong>
             <div style="position: relative; display: inline-block;">
@@ -248,7 +248,7 @@
           {% if section|length %}
             {% for element in section %}
               {% set elementIndex = elementIndex + 1 %}
-                <div class="field related-element-item incoming-element" data-index="{{ elementIndex - 1 }}" style="padding-block: 12px; padding-inline: var(--m) var(--s);">
+                <div class="field related-element-item incoming-element" data-index="{{ elementIndex - 1 }}" style="padding-block: 12px; padding-inline: var(--m);">
                   <div class="flex flex-nowrap gap-s items-center" style="padding-left: var(--m);">
                     {% if key == 'Tag' %}
                       <a href="#" class="flex flex-nowrap gap-s items-center tag-link" data-tag-id="{{ element.id }}">
@@ -285,7 +285,7 @@
       {% endif %}
 
       {% if totalElements > (initialLimit ?? 10) %}
-        <div class="field show-more-container" style="padding-block: 6px; padding-inline: var(--m) var(--s); border-top: none; margin-top: 8px;">
+        <div class="field show-more-container" style="padding-block: 6px; padding-inline: var(--m); border-top: none; margin-top: 8px;">
           <button type="button" class="btn small show-more-btn">
             Show {{ totalElements - (initialLimit ?? 10) }} more related elements
           </button>
@@ -296,7 +296,7 @@
       {% endif %}
     {% else %}
       <div class="field flex-1">
-        <div style="padding-block: 12px; padding-inline: var(--m) var(--s);">
+        <div style="padding-block: 12px; padding-inline: var(--m);">
           <p>No related elements found.</p>
         </div>
       </div>
