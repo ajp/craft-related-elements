@@ -2,7 +2,7 @@
 
 Displays related elements of an entry, category or asset in the control panel edit view sidebar.
 
-<img src="screenshot.png" alt="Screenshot" width="500" height="500">
+<img src="screenshot.png" alt="Screenshot" width="370">
 
 ## Requirements
 
