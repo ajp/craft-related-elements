@@ -9,15 +9,17 @@ class Settings extends Model
     public bool $enableNestedElements = true;
     public int $initialLimit = 10;
     public bool $showElementTypeLabel = true;
+    public bool $useHardLimitCount = false;
+    public int $hardLimitCount = 100;
 
     public function rules(): array
     {
         return [
-            [['enableNestedElements', 'showElementTypeLabel', 'useHardLimit'], 'boolean'],
+            [['enableNestedElements', 'showElementTypeLabel', 'useHardLimitCount'], 'boolean'],
             [['initialLimit'], 'integer', 'min' => 1, 'max' => 100],
             [['initialLimit'], 'default', 'value' => 10],
-            [['hardLimit'], 'integer', 'min' => 1, 'max'=>100],
-            [['hardLimit'], 'default', 'value' => 100],
+            [['hardLimitCount'], 'integer', 'min' => 1, 'max' => 100],
+            [['hardLimitCount'], 'default', 'value' => 100],
         ];
     }
 }

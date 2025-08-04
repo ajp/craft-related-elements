@@ -128,7 +128,7 @@ class RelatedElements extends Plugin
                 'nestedRelatedElements' => $nestedRelatedElements,
                 'initialLimit' => self::$settings->initialLimit,
                 'useHardLimitCount' => self::$settings->useHardLimitCount,
-                'hardLimit' => self::$settings->hardLimit,
+                'hardLimitCount' => self::$settings->hardLimitCount,
                 'elementType' => $elementType,
                 'showElementTypeLabel' => self::$settings->showElementTypeLabel,
             ]
