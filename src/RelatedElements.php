@@ -87,6 +87,8 @@ class RelatedElements extends Plugin
         $enableNestedElements = self::$settings->enableNestedElements;
         $currentSiteId = $element->siteId;
         $currentSiteHandle = Craft::$app->getSites()->getSiteById($currentSiteId)->handle;
+        $enableHardLimits = self::$settings->useHardLimitCount;
+        $hardLimitCount = self::$settings->hardLimitCount ? self::$settings->hardLimitCount : 100;
 
         // Find outgoing relationships (elements this entry references)
         $this->findOutgoingRelationships($element, $relatedTypes, $outgoingRelatedElements, $hasResults, $currentSiteHandle);
@@ -230,10 +232,14 @@ class RelatedElements extends Plugin
                     ->site('*')
                     ->unique()
                     ->preferSites([$currentSiteHandle])
-                    ->orderBy('title')
-                
-                if ($hardLimit)
+                    ->orderBy('title');
 
+                if ($enableHardLimits) {
+                    $elements->limit($hardLimitCount);
+                }
+
+                $elements = $elements->all();
+                
                 $filteredElements = array_filter($elements, function($el) use ($element) {
                     try {
                         // Don't include the element itself and ensure it has a field layout
@@ -412,8 +418,13 @@ class RelatedElements extends Plugin
                                         ->site('*')
                                         ->unique()
                                         ->preferSites([$currentSiteHandle])
-                                        ->orderBy('title')
-                                        ->all();
+                                        ->orderBy('title');
+                                        
+                if ($enableHardLimits) {
+                    $elements->limit($hardLimitCount);
+                }
+
+                $elements = $elements->all();
 
                                     $filteredElements = array_filter($newElements, function($el) {
                                         try {
