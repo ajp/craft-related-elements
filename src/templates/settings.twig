@@ -37,5 +37,28 @@
     warning: configFileSettings.initialLimit is defined ? 'This setting is being overridden by the "initialLimit" setting in your related-elements.php config file.' : null,
     disabled: configFileSettings.initialLimit is defined,
   }) }}
+
+    {{ forms.lightswitchField({
+    label: 'Use Hard Limits',
+    instructions: 'Whether to show all or limit returned values to Hard Limit Count.',
+    name: 'useHardLimitCount',
+    value: settings.useHardLimitCount,
+    on: (settings.useHardLimitCount is defined) ? settings.useHardLimitCount : '',
+    warning: configFileSettings.useHardLimitCount is defined ? 'This setting is being overridden by the "useHardLimitCount" setting in your related-elements.php config file.' : null,
+    disabled: configFileSettings.useHardLimitCount is defined,
+  }) }}
+
+  {{ forms.textField({
+    label: 'Hard Limit Count',
+    instructions: 'Sets an absolute limit of the number of elements to fetch. Useful for elements with lots of related entries',
+    name: 'hardLimit',
+    value: settings.hardLimit,
+    type: 'number',
+    min: 1,
+    max: 100,
+    size: 10,
+    warning: configFileSettings.hardLimit is defined ? 'This setting is being overridden by the "initialLimit" setting in your related-elements.php config file.' : null,
+    disabled: configFileSettings.hardLimit is defined,
+  }) }}
 </div>
 

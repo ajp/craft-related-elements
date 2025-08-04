@@ -13,9 +13,11 @@ class Settings extends Model
     public function rules(): array
     {
         return [
-            [['enableNestedElements', 'showElementTypeLabel'], 'boolean'],
+            [['enableNestedElements', 'showElementTypeLabel', 'useHardLimit'], 'boolean'],
             [['initialLimit'], 'integer', 'min' => 1, 'max' => 100],
             [['initialLimit'], 'default', 'value' => 10],
+            [['hardLimit'], 'integer', 'min' => 1, 'max'=>100],
+            [['hardLimit'], 'default', 'value' => 100],
         ];
     }
 }

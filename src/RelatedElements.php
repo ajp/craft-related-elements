@@ -125,6 +125,8 @@ class RelatedElements extends Plugin
                 'incomingRelatedElements' => $incomingRelatedElements,
                 'nestedRelatedElements' => $nestedRelatedElements,
                 'initialLimit' => self::$settings->initialLimit,
+                'useHardLimitCount' => self::$settings->useHardLimitCount,
+                'hardLimit' => self::$settings->hardLimit,
                 'elementType' => $elementType,
                 'showElementTypeLabel' => self::$settings->showElementTypeLabel,
             ]
@@ -229,7 +231,8 @@ class RelatedElements extends Plugin
                     ->unique()
                     ->preferSites([$currentSiteHandle])
                     ->orderBy('title')
-                    ->all();
+                
+                if ($hardLimit)
 
                 $filteredElements = array_filter($elements, function($el) use ($element) {
                     try {
