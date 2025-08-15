@@ -87,8 +87,6 @@ class RelatedElements extends Plugin
         $enableNestedElements = self::$settings->enableNestedElements;
         $currentSiteId = $element->siteId;
         $currentSiteHandle = Craft::$app->getSites()->getSiteById($currentSiteId)->handle;
-        $enableHardLimits = self::$settings->useHardLimitCount;
-        $hardLimitCount = self::$settings->hardLimitCount ? self::$settings->hardLimitCount : 100;
 
         // Find outgoing relationships (elements this entry references)
         $this->findOutgoingRelationships($element, $relatedTypes, $outgoingRelatedElements, $hasResults, $currentSiteHandle);
@@ -127,8 +125,6 @@ class RelatedElements extends Plugin
                 'incomingRelatedElements' => $incomingRelatedElements,
                 'nestedRelatedElements' => $nestedRelatedElements,
                 'initialLimit' => self::$settings->initialLimit,
-                'useHardLimitCount' => self::$settings->useHardLimitCount,
-                'hardLimitCount' => self::$settings->hardLimitCount,
                 'elementType' => $elementType,
                 'showElementTypeLabel' => self::$settings->showElementTypeLabel,
             ]
@@ -232,14 +228,9 @@ class RelatedElements extends Plugin
                     ->site('*')
                     ->unique()
                     ->preferSites([$currentSiteHandle])
-                    ->orderBy('title');
+                    ->orderBy('title')
+                    ->all();
 
-                if ($enableHardLimits) {
-                    $elements->limit($hardLimitCount);
-                }
-
-                $elements = $elements->all();
-                
                 $filteredElements = array_filter($elements, function($el) use ($element) {
                     try {
                         // Don't include the element itself and ensure it has a field layout
@@ -418,13 +409,8 @@ class RelatedElements extends Plugin
                                         ->site('*')
                                         ->unique()
                                         ->preferSites([$currentSiteHandle])
-                                        ->orderBy('title');
-                                        
-                if ($enableHardLimits) {
-                    $elements->limit($hardLimitCount);
-                }
-
-                $elements = $elements->all();
+                                        ->orderBy('title')
+                                        ->all();
 
                                     $filteredElements = array_filter($newElements, function($el) {
                                         try {
