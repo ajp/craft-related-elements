@@ -229,6 +229,7 @@ class RelatedElements extends Plugin
                     ->unique()
                     ->preferSites([$currentSiteHandle])
                     ->orderBy('title')
+                    ->limit(100)
                     ->all();
 
                 $filteredElements = array_filter($elements, function($el) use ($element) {
@@ -410,6 +411,7 @@ class RelatedElements extends Plugin
                                         ->unique()
                                         ->preferSites([$currentSiteHandle])
                                         ->orderBy('title')
+                                        ->limit(100)
                                         ->all();
 
                                     $filteredElements = array_filter($newElements, function($el) {
